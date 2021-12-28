@@ -1,5 +1,6 @@
 # ESSL_GAN_HSI
-##Implementation of an Extended Semi Supervised Learning Generative Adversarial Network (ESSL GAN) for hyper-spectral imagery 
+### Refactor for Tensorflow 2.0 is coming soon
+Implementation of an Extended Semi Supervised Learning Generative Adversarial Network (ESSL GAN) for hyper-spectral imagery 
 
 The following code shows an implementation of a GAN trained using the Extended Semi-Supervised Learning methodology introduced in 
 
