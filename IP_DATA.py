@@ -5,15 +5,41 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sp
 
+import os
+import requests
+
 class IP_DS(object):
     def __init__(self):
-        data = sp.loadmat('Indian_pines_corrected.mat')
+        
+        '''Get Data from source or local if it exists'''
+        data_url = 'http://www.ehu.eus/ccwintco/uploads/6/67/Indian_pines_corrected.mat'
+        label_url = 'http://www.ehu.eus/ccwintco/uploads/c/c4/Indian_pines_gt.mat'
+        
+        data_set_path = 'Indian_pines_corrected.mat'
+        label_path = 'Indian_pines_gt.mat'
+        
+        if data_set_path in os.listdir():
+            pass
+        else:
+            r = requests.get(data_url)
+            open(data_set_path, 'wb').write(r.content)
+        
+        if label_path in os.listdir():
+            pass
+        else:
+            r = requests.get(label_url)
+            open(label_path, 'wb').write(r.content)
+            
+        '''Load data and cast to float'''
+        data = sp.loadmat(data_set_path)
         data = data['indian_pines_corrected'].astype('float32')
         
+        lab = sp.loadmat('Indian_pines_gt.mat')['indian_pines_gt']
+        
+        '''Reshape Dataset'''
         self.data = np.reshape(
                 data,[data.shape[0]*data.shape[1],data.shape[2]])
         
-        lab = sp.loadmat('Indian_pines_gt.mat')['indian_pines_gt']
         self.lab = np.reshape(
                 lab,[lab.shape[0]*lab.shape[1],1]).astype('int64')
     
