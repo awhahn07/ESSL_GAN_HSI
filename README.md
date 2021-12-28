@@ -23,6 +23,6 @@ The code used to implement ESSL GAN has four main components, GAN Run, GAN model
 2. *d\_weight.h5*: H5 file containing the trained discriminator weights. 
 3. *g\_weight.h5*: H5 file containing the trained generator weights.
 4. *acc\_log\_YYYY\_MM\_DD\_HH\_MM.csv*: CSV file containing test data with respect to the performance metrics.
-5. *hsi\_loss\_log\_YYYY\_MM\_DD\_HH\_MM.csv: CSV file containing the generator and discriminator losses.     
+5. *hsi\_loss\_log\_YYYY\_MM\_DD\_HH\_MM.csv*: CSV file containing the generator and discriminator losses.     
 
 - Once the GAN training run has been completed, the weights from the discriminator can be loaded into separate networks for classifier training and testing.  
