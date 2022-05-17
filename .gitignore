@@ -2,6 +2,7 @@
 
 # IDEs and editors
 .spyproject
+.idea
 __pycache__
 
 # Data/tests

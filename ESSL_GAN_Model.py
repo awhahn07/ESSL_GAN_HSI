@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May 17 15:59:18 2022
+
+@author: m1226
+"""
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
@@ -5,7 +11,12 @@ import os
 import scipy.io as io
 from tensorflow import keras as k
 
+
+#TODO make this into a keras.Model subclass
 class GanModel(object):    
+    
+    '''
+    #TODO determine which initialization conditions are needed
     def __init__(self,binary=False,batch_size=100,noise_dim=100,
                  gamma=1,nb_class=18,target_length=None,
                  class_weights=True, glr=5e-4, dlr=5e-4): 
@@ -22,7 +33,13 @@ class GanModel(object):
         self.make_generator_model()
         self.gen_optimizer()
         self.disc_optimizer()
-            
+    '''        
+    
+    
+    
+    '''
+    
+    #TODO Remove, Model to be defined in calling function script for loose coupling
     def make_generator_model(self):
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.Dense(1024, use_bias=False, 
@@ -62,7 +79,14 @@ class GanModel(object):
         model.add(tf.keras.layers.Dense(self.nb_class))          
         self.discriminator=model
         self.discriminator.summary()
+    '''
     
+    #TODO add SUPER for compile method
+    
+    #TODO add @property metrics for tracking
+        #These should include lossed to being with, then expand to ESSL metrics
+        
+    #TODO Determing this function necesity 
     def generator_vector(self):
         ''' Generate vector of random ints in range of all valid TRUE classes,
         i.e. Classes C_0...C_n. Fake class is C_n+1  '''
@@ -78,7 +102,8 @@ class GanModel(object):
         gen_loss = tf.losses.softmax_cross_entropy(
                 lab,generated_output, label_smoothing=0.1,weights=1)
         return gen_loss
- 
+    
+    #TODO Determine need of Gamma parameter as input to this funciton
     def discriminator_loss(self, real_output, generated_output,
                            train_lab,weights=1):
         '''Compute real loss'''
@@ -92,7 +117,8 @@ class GanModel(object):
                 gen_loss_labels,generated_output,label_smoothing=0.1)
         total_loss = real_loss + self.gamma*generated_loss
         return total_loss,real_loss,generated_loss
-        
+    
+    #TODO Determine need of this function
     def make_class_weights(self,labels,class_weights):
         if class_weights==None:
             return 1
@@ -100,6 +126,7 @@ class GanModel(object):
         weights = [class_weights[i] for i in ind]    
         return weights  
     
+    #TODO Remove Optimizers, defined in compile call
     def gen_optimizer(self):
         self.generator_optimizer = tf.train.AdamOptimizer(
                 self.gen_learning_rate)
@@ -112,7 +139,8 @@ class GanModel(object):
         
         print("Disc Optimizer Learning Rate: {}".format(
                 self.disc_learning_rate))
-        
+    
+    #TODO ensure this aligns with kera.Model trainstep methods for inputs and outputs
     def train_step(self,images,labels,global_step,class_weights=None):
         ''' Generate a vector of size([Batch_Size,Noise_Dim+Num_Classes]). 
         This vector has random noise of size Noise_Dim with a Sparse Vector
@@ -162,87 +190,3 @@ class GanModel(object):
                     self.discriminator.variables),
                     global_step=global_step)
         return gen_loss,disc_loss,real_loss,fake_loss
-    
-    def generate_and_save_images(self,epoch,path):
-        gen_vec = np.random.normal(size=[self.nb_class-1,100])
-        lab_enc = k.utils.to_categorical(np.arange(self.nb_class-1),
-                                         num_classes=self.nb_class)
-        gen_vec=np.append(gen_vec,lab_enc,axis=1)
-        predictions = self.generator.predict(gen_vec)
-        pred = np.squeeze(predictions)
-        fig,ax = plt.subplots(6,3,sharex=True,sharey=True)
-        fig.set_size_inches(10,15)  
-        for i,axes in enumerate(ax.flat):
-            if i < len(predictions):
-                axes.plot(pred[i, :])
-                axes.set_title('Spectrum {}'.format(i))
-            axes.axis('on')
-            axes.grid(True)
-        #fig.show()
-        fig.savefig(path+'/image_at_epoch_{}.png'.format(epoch))
-        plt.close(fig=fig)
-        
-    def generate_and_save_signals(self,runs,epoch,path):
-        for run in range(runs):
-            g = self.generator(self.generator_vector())
-            lab = self.gen_labels()
-            Data = np.squeeze(g)
-            lab = np.squeeze(lab)
-            lab_index=[]
-            c = self.nb_class-1
-            for j in range(c):
-                ind = [i for i, x in enumerate(lab) if x==j]
-                lab_index.append(ind)    
-            Segment = [Data[lab_index[i]] for i in range(c)]
-            if run == 0:
-                Signals = Segment
-            else:
-                Signals = [np.append(Signals[ind],Segment[ind],axis=0) 
-                    for ind in range(c)]
-        mdict={'Signals':Signals}
-        io.savemat(os.path.join(
-                path,'signal_at_epoch_{}'.format(epoch)),mdict)
-        return Signals
-    
-    def test(self,dataset_element):
-        im,lab = dataset_element
-        '''Create a generator Vector with Labels'''
-        gv,l = self.generator_vector()
-        '''Calcualte G(z), aka generated images batch'''
-        gz = self.generator.predict(gv)
-        '''Calculate D(x), from real Images'''
-        dx = self.discriminator.predict(im.numpy())
-        '''Calculate D(G(z)) from gen ims'''
-        dgz = self.discriminator.predict(gz)
-        '''Create label vector of all K+1 labels, 
-        i.e., labels vector indicating all generated imagery'''
-        syn_lab = np.zeros_like(l)
-        syn_lab[:,-1]=1
-        '''Convert from logits to probabilites for 
-        D(X) and D(G(Z)) and extract values'''
-        syn_pred = tf.nn.softmax(dgz)
-        true_pred = tf.nn.softmax(dx)
-        syn_pred = syn_pred.numpy()
-        true_pred = true_pred.numpy()
-        
-        acc = tf.keras.metrics.categorical_accuracy
-        mean = tf.math.reduce_mean
-        '''Compute mean accuracy for the following:
-            p_{DS}: Accuracy of D in determining True 
-                    images true classes
-            p_{GP}: G getting D to predict its desired class 
-            p_{DU}: How often D predicts G(z) is synthetic 
-            p_{GE}: How often D predicts G to be real but
-                    NOT the intended class: 
-                    G_c = (!G_precision & D_false_real)'''
-        gp = acc(l,dgz)
-        dts = acc(syn_lab,dgz)
-        dfr = (dts.numpy()==0).astype(int)
-        gp_not = (gp.numpy()==0).astype(int)
-        p_DS = mean(acc(lab,true_pred)).numpy()
-        p_DU = mean(dts).numpy()
-        p_GP = mean(gp).numpy()
-        p_GE = np.mean(dfr & gp_not)
-        
-        return {'p_DS':p_DS,'p_GP':p_GP,'p_DU':p_DU,'p_GE':p_GE} 
-        
